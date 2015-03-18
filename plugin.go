@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -73,7 +72,7 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 		guid := findAppGUID(cliConnection, appName)
 		fmt.Println("App GUID:", guid)
 
-		logstash, err := findLogstashInAppServices(cliConnection, guid)
+		logstash, err := findServices(cliConnection, guid, "logstash14")
 		fatalIf(err)
 
 		fmt.Printf("%#v\n", logstash)
@@ -118,7 +117,7 @@ func findAppGUID(cliConnection plugin.CliConnection, appName string) string {
 	return res.Resources[0].Metadata.GUID
 }
 
-func findLogstashInAppServices(cliConnection plugin.CliConnection, appGUID string) (logstash appEnvService, err error) {
+func findServices(cliConnection plugin.CliConnection, appGUID string, serviceName string) (logstash appEnvService, err error) {
 	appQuery := fmt.Sprintf("/v2/apps/%v/env", appGUID)
 	cmd := []string{"curl", appQuery}
 	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
@@ -130,10 +129,10 @@ func findLogstashInAppServices(cliConnection plugin.CliConnection, appGUID strin
 	}
 	services := appEnvServices{}
 	json.Unmarshal([]byte(str), &services)
-	if len(services["logstash14"]) == 0 {
-		err = errors.New("app is not bound to a logstash14 service")
+	if len(services[serviceName]) == 0 {
+		err = fmt.Errorf("app is not bound to a %s service", serviceName)
 		return
 	}
-	logstash = services["logstash14"][0]
+	logstash = services[serviceName][0]
 	return
 }
