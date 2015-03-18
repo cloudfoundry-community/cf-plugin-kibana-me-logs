@@ -14,7 +14,7 @@ import (
 
 func fatalIf(err error) {
 	if err != nil {
-		log.Fatalf("error:", err)
+		log.Fatalln("error:", err)
 	}
 }
 
@@ -42,7 +42,6 @@ func main() {
 func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if len(args) < 2 {
 		cliConnection.CliCommand(args[0], "-h")
-		log.Fatalln("Appname is needed")
 	}
 
 	if args[0] == "kibana-me-logs" {
@@ -52,7 +51,7 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 			os.Exit(1)
 		}
 		appName := args[1]
-		guid := findAppGuid(cliConnection, appName)
+		guid := findAppGUID(cliConnection, appName)
 		fmt.Println("App GUID:", guid)
 	}
 
@@ -80,12 +79,12 @@ func (c *KibanaMeAppPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func findAppGuid(cliConnection plugin.CliConnection, appName string) string {
+func findAppGUID(cliConnection plugin.CliConnection, appName string) string {
 
 	confRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), fatalIf)
-	spaceGuid := confRepo.SpaceFields().Guid
+	spaceGUID := confRepo.SpaceFields().Guid
 
-	appQuery := fmt.Sprintf("/v2/spaces/%v/apps?q=name:%v&inline-relations-depth=1", spaceGuid, appName)
+	appQuery := fmt.Sprintf("/v2/spaces/%v/apps?q=name:%v&inline-relations-depth=1", spaceGUID, appName)
 	cmd := []string{"curl", appQuery}
 
 	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
