@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/plugin"
+	"github.com/skratchdot/open-golang/open"
 )
 
 func fatalIf(err error) {
@@ -61,23 +63,36 @@ func main() {
 
 // Run is the entry function for a cf CLI plugin
 func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []string) {
-	if len(args) < 2 {
+	if len(args) < 3 {
 		cliConnection.CliCommand(args[0], "-h")
 	}
 
 	if args[0] == "kibana-me-logs" {
-		_, err := cliConnection.CliCommandWithoutTerminalOutput("app", args[1])
-		fatalWithMessageIf(err, "app does not exist in this org/space")
-		appName := args[1]
-		guid := findAppGUID(cliConnection, appName)
-		fmt.Println("App GUID:", guid)
+		kibanaAppName, appName := args[1], args[2]
 
-		logstash, err := findServices(cliConnection, guid, "logstash14")
+		kibanaAppOutput, err := cliConnection.CliCommandWithoutTerminalOutput("app", kibanaAppName)
+		fatalWithMessageIf(err, "kibana app does not exist in this org/space")
+		kibanaGUID := findAppGUID(cliConnection, kibanaAppName)
+
+		_, err = cliConnection.CliCommandWithoutTerminalOutput("app", appName)
+		fatalWithMessageIf(err, "app does not exist in this org/space")
+		appGUID := findAppGUID(cliConnection, appName)
+
+		kibanaLogstash, err := findService(cliConnection, kibanaGUID, "logstash14")
+		fatalIf(err)
+		appLogstash, err := findService(cliConnection, appGUID, "logstash14")
 		fatalIf(err)
 
-		fmt.Printf("%#v\n", logstash)
-	}
+		if appLogstash.Name != kibanaLogstash.Name {
+			fatalIf(fmt.Errorf("app and kibana do not share the same logstash14 service"))
+		}
 
+		kibanaURLs, err := getURLFromOutput(kibanaAppOutput)
+		fatalIf(err)
+		kibanaBaseURL := kibanaURLs[0]
+		appURL := fmt.Sprintf("%s/#/dashboard/file/app-logs-%s.json", kibanaBaseURL, appGUID)
+		open.Run(appURL)
+	}
 }
 
 // GetMetadata is a CF plugin method for metadata about the plugin
@@ -95,7 +110,7 @@ func (c *KibanaMeAppPlugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "open kibana-me-logs for an application",
 
 				UsageDetails: plugin.Usage{
-					Usage: "kibana-me-logs <appname>",
+					Usage: "kibana-me-logs <kibana-app-name> <app-name>",
 				},
 			},
 		},
@@ -117,7 +132,7 @@ func findAppGUID(cliConnection plugin.CliConnection, appName string) string {
 	return res.Resources[0].Metadata.GUID
 }
 
-func findServices(cliConnection plugin.CliConnection, appGUID string, serviceName string) (logstash appEnvService, err error) {
+func findService(cliConnection plugin.CliConnection, appGUID string, serviceName string) (logstash appEnvService, err error) {
 	appQuery := fmt.Sprintf("/v2/apps/%v/env", appGUID)
 	cmd := []string{"curl", appQuery}
 	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
@@ -135,4 +150,25 @@ func findServices(cliConnection plugin.CliConnection, appGUID string, serviceNam
 	}
 	logstash = services[serviceName][0]
 	return
+}
+
+// extracted from cf-plugin-open
+func getURLFromOutput(output []string) ([]string, error) {
+	urls := []string{}
+	for _, line := range output {
+		splitLine := strings.Split(strings.TrimSpace(line), " ")
+		if splitLine[0] == "urls:" {
+			if len(splitLine) > 1 {
+				for p := 1; p < len(splitLine); p++ {
+					url := "http://" + strings.Trim(splitLine[p], ",")
+					url = strings.TrimSpace(url)
+					urls = append(urls, url)
+				}
+
+			} else if len(splitLine) == 1 {
+				return []string{""}, errors.New("App has no route")
+			}
+		}
+	}
+	return urls, nil
 }
