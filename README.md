@@ -15,8 +15,12 @@ Usage
 -----
 
 ```
-$ cf kibana-me-logs <appname>
+$ cf kibana-me-logs <kibana-app> <app>
 ```
+
+Will launch the Kibana UI and show logs for the requested app.
+
+It assumes that `<kibana-app>` is the [kibana-me-logs](https://github.com/cloudfoundry-community/kibana-me-logs)\), and both are bound to the same `logstash14` logstash service.
 
 Development
 -----------
