@@ -6,9 +6,27 @@ Launches the Kibana UI (from [kibana-me-logs](https://github.com/cloudfoundry-co
 Installation
 ------------
 
+From community plugin repo:
+
+```
+$ cf add-plugin-repo community http://plugins.cfapps.io/
+$ cf install-plugin kibana-me-logs -r community
+```
+
+From source:
+
 ```
 $ go get github.com/cloudfoundry-community/cf-plugin-kibana-me-logs
 $ cf install-plugin $GOPATH/bin/cf-plugin-kibana-me-logs
+```
+
+Upgrade
+-------
+
+To upgrade you must first uninstall the plugin and then install as above:
+
+```
+$ cf uninstall-plugin kibana-me-logs
 ```
 
 Usage
