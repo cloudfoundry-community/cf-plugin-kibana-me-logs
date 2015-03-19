@@ -1,7 +1,0 @@
-#!/bin/bash
-
-rm cf-plugin-kibana*
-gox -os darwin -os linux -os windows
-mkdir -p out
-mv cf-plugin-kibana* out/
-
