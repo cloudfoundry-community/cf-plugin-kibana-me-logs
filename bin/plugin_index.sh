@@ -2,9 +2,10 @@
 
 export COMPANY="Stark & Wayne"
 export AUTHOR=${AUTHOR:-"Dr Nic Williams"}
-export EMAIL=${EMAIL:-"drnicwilliams@gmail.com"}
+export EMAIL=${EMAIL:-"drnic@starkandwayne.com"}
 export GH_AUTHOR=${GH_AUTHOR:-drnic}
-export HOMEPAGE=${HOMEPAGE:-"http://github.com/$GH_AUTHOR"}
+# export HOMEPAGE=${HOMEPAGE:-"http://github.com/$GH_AUTHOR"}
+export HOMEPAGE=http://drnicwilliams.com
 export GH_ORG=${GH_ORG:-cloudfoundry-community}
 export GH_REPO=${GH_REPO:-cf-plugin-kibana-me-logs}
 export NAME=${NAME:-"kibana-me-logs"}
