@@ -3,7 +3,7 @@
 export GH_ORG=${GH_ORG:-cloudfoundry-community}
 export GH_REPO=${GH_REPO:-cf-plugin-kibana-me-logs}
 export NAME=${NAME:-"cf cli plugin for kibana-me-logs"}
-export DESCRIPTION=${DESCRIPTION:-"Launches the Kibana UI (from [kibana-me-logs](https://github.com/cloudfoundry-community/kibana-me-logs)\) for an application."}
+export DESCRIPTION=${DESCRIPTION:-"Launches the Kibana UI (from [kibana-me-logs](https://github.com/cloudfoundry-community/kibana-me-logs)\) for an application.\n\n![demo](http://cl.ly/image/0N0J0h1Q2X2a/kibana-me-logs.gif)"}
 export PKG_DIR=${PKG_DIR:=out}
 
 if [[ "${VERSION}X" == "X" ]]; then
