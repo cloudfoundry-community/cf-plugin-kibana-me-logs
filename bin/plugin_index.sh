@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export COMPANY="Stark & Wayne"
 export AUTHOR=${AUTHOR:-"Dr Nic Williams"}
 export EMAIL=${EMAIL:-"drnicwilliams@gmail.com"}
 export GH_AUTHOR=${GH_AUTHOR:-drnic}
@@ -24,7 +25,7 @@ cat << EOS
   version: $VERSION
   created: $PROJECT_CREATED
   updated: $(date +%F)
-  company: $GH_ORG
+  company: "$COMPANY"
   authors:
   - name: "$AUTHOR"
     homepage: $HOMEPAGE
