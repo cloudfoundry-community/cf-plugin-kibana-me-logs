@@ -56,7 +56,9 @@ type appEnvService struct {
 type appEnvServices map[string][]appEnvService
 
 // KibanaMeAppPlugin is the type for the plugin functions
-type KibanaMeAppPlugin struct{}
+type KibanaMeAppPlugin struct {
+	cliConnection plugin.CliConnection
+}
 
 func main() {
 	plugin.Start(&KibanaMeAppPlugin{})
@@ -65,6 +67,7 @@ func main() {
 
 // Run is the entry function for a cf CLI plugin
 func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+	c.cliConnection = cliConnection
 	if len(args) < 3 {
 		cliConnection.CliCommand(args[0], "-h")
 	}
@@ -74,22 +77,22 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 
 		kibanaAppOutput, err := cliConnection.CliCommandWithoutTerminalOutput("app", kibanaAppName)
 		fatalWithMessageIf(err, "kibana app does not exist in this org/space")
-		kibanaGUID := findAppGUID(cliConnection, kibanaAppName)
+		kibanaGUID := c.findAppGUID(kibanaAppName)
 
 		_, err = cliConnection.CliCommandWithoutTerminalOutput("app", appName)
 		fatalWithMessageIf(err, "app does not exist in this org/space")
-		appGUID := findAppGUID(cliConnection, appName)
+		appGUID := c.findAppGUID(appName)
 
-		kibanaLogstash, err := findService(cliConnection, kibanaGUID, "logstash14")
+		kibanaLogstash, err := c.findService(kibanaGUID, "logstash14")
 		fatalIf(err)
-		appLogstash, err := findService(cliConnection, appGUID, "logstash14")
+		appLogstash, err := c.findService(appGUID, "logstash14")
 		fatalIf(err)
 
 		if appLogstash.Name != kibanaLogstash.Name {
 			fatalIf(fmt.Errorf("app and kibana do not share the same logstash14 service"))
 		}
 
-		kibanaURLs, err := getURLFromOutput(kibanaAppOutput)
+		kibanaURLs, err := c.getURLFromOutput(kibanaAppOutput)
 		fatalIf(err)
 		kibanaBaseURL := kibanaURLs[0]
 		appURL := fmt.Sprintf("%s/#/dashboard/file/app-logs-%s.json", kibanaBaseURL, appGUID)
@@ -129,7 +132,7 @@ func (c *KibanaMeAppPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
-func findAppGUID(cliConnection plugin.CliConnection, appName string) string {
+func (c *KibanaMeAppPlugin) findAppGUID(appName string) string {
 
 	confRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), fatalIf)
 	spaceGUID := confRepo.SpaceFields().Guid
@@ -137,17 +140,17 @@ func findAppGUID(cliConnection plugin.CliConnection, appName string) string {
 	appQuery := fmt.Sprintf("/v2/spaces/%v/apps?q=name:%v&inline-relations-depth=1", spaceGUID, appName)
 	cmd := []string{"curl", appQuery}
 
-	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
+	output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
 	res := &appSearchResults{}
 	json.Unmarshal([]byte(strings.Join(output, "")), &res)
 
 	return res.Resources[0].Metadata.GUID
 }
 
-func findService(cliConnection plugin.CliConnection, appGUID string, serviceName string) (logstash appEnvService, err error) {
+func (c *KibanaMeAppPlugin) findService(appGUID string, serviceName string) (logstash appEnvService, err error) {
 	appQuery := fmt.Sprintf("/v2/apps/%v/env", appGUID)
 	cmd := []string{"curl", appQuery}
-	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
+	output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
 	appEnvs := appEnv{}
 	json.Unmarshal([]byte(output[0]), &appEnvs)
 	str, err := json.Marshal(appEnvs.System["VCAP_SERVICES"])
@@ -165,7 +168,7 @@ func findService(cliConnection plugin.CliConnection, appGUID string, serviceName
 }
 
 // extracted from cf-plugin-open
-func getURLFromOutput(output []string) ([]string, error) {
+func (c *KibanaMeAppPlugin) getURLFromOutput(output []string) ([]string, error) {
 	urls := []string{}
 	for _, line := range output {
 		splitLine := strings.Split(strings.TrimSpace(line), " ")
