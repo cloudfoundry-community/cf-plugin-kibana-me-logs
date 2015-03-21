@@ -68,36 +68,34 @@ func main() {
 // Run is the entry function for a cf CLI plugin
 func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	c.cliConnection = cliConnection
-	if len(args) < 3 {
+	if args[0] != "kibana-me-logs" || len(args) < 3 {
 		cliConnection.CliCommand(args[0], "-h")
 	}
 
-	if args[0] == "kibana-me-logs" {
-		kibanaAppName, appName := args[1], args[2]
+	kibanaAppName, appName := args[1], args[2]
 
-		kibanaAppOutput, err := cliConnection.CliCommandWithoutTerminalOutput("app", kibanaAppName)
-		fatalWithMessageIf(err, "kibana app does not exist in this org/space")
-		kibanaGUID := c.findAppGUID(kibanaAppName)
+	kibanaAppOutput, err := cliConnection.CliCommandWithoutTerminalOutput("app", kibanaAppName)
+	fatalWithMessageIf(err, "kibana app does not exist in this org/space")
+	kibanaGUID := c.findAppGUID(kibanaAppName)
 
-		_, err = cliConnection.CliCommandWithoutTerminalOutput("app", appName)
-		fatalWithMessageIf(err, "app does not exist in this org/space")
-		appGUID := c.findAppGUID(appName)
+	_, err = cliConnection.CliCommandWithoutTerminalOutput("app", appName)
+	fatalWithMessageIf(err, "app does not exist in this org/space")
+	appGUID := c.findAppGUID(appName)
 
-		kibanaLogstash, err := c.findService(kibanaGUID, "logstash14")
-		fatalIf(err)
-		appLogstash, err := c.findService(appGUID, "logstash14")
-		fatalIf(err)
+	kibanaLogstash, err := c.findService(kibanaGUID, "logstash14")
+	fatalIf(err)
+	appLogstash, err := c.findService(appGUID, "logstash14")
+	fatalIf(err)
 
-		if appLogstash.Name != kibanaLogstash.Name {
-			fatalIf(fmt.Errorf("app and kibana do not share the same logstash14 service"))
-		}
-
-		kibanaURLs, err := c.getURLFromOutput(kibanaAppOutput)
-		fatalIf(err)
-		kibanaBaseURL := kibanaURLs[0]
-		appURL := fmt.Sprintf("%s/#/dashboard/file/app-logs-%s.json", kibanaBaseURL, appGUID)
-		open.Run(appURL)
+	if appLogstash.Name != kibanaLogstash.Name {
+		fatalIf(fmt.Errorf("app and kibana do not share the same logstash14 service"))
 	}
+
+	kibanaURLs, err := c.getURLFromOutput(kibanaAppOutput)
+	fatalIf(err)
+	kibanaBaseURL := kibanaURLs[0]
+	appURL := fmt.Sprintf("%s/#/dashboard/file/app-logs-%s.json", kibanaBaseURL, appGUID)
+	open.Run(appURL)
 }
 
 // GetMetadata is a CF plugin method for metadata about the plugin
