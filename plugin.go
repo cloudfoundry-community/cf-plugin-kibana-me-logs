@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
@@ -59,6 +60,7 @@ type KibanaMeAppPlugin struct{}
 
 func main() {
 	plugin.Start(&KibanaMeAppPlugin{})
+	// fmt.Printf("%#v\n", (&KibanaMeAppPlugin{}).GetMetadata())
 }
 
 // Run is the entry function for a cf CLI plugin
@@ -97,12 +99,22 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 
 // GetMetadata is a CF plugin method for metadata about the plugin
 func (c *KibanaMeAppPlugin) GetMetadata() plugin.PluginMetadata {
+	version, err := Asset("VERSION")
+	if err != nil {
+		fmt.Println("VERSION go-bindata asset not found")
+		version = []byte("0.0.0")
+	}
+	versionParts := strings.Split(string(version), ".")
+	major, _ := strconv.Atoi(versionParts[0])
+	minor, _ := strconv.Atoi(versionParts[1])
+	patch, _ := strconv.Atoi(strings.TrimSpace(versionParts[2]))
+
 	return plugin.PluginMetadata{
 		Name: "kibana-me-logs",
 		Version: plugin.VersionType{
-			Major: 0,
-			Minor: 1,
-			Build: 0,
+			Major: major,
+			Minor: minor,
+			Build: patch,
 		},
 		Commands: []plugin.Command{
 			plugin.Command{
