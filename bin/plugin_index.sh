@@ -35,11 +35,11 @@ cat << EOS
   binaries:
   - platform: win64
     url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_windows_amd64.exe"
-    checksum: "$(md5sum out/${GH_REPO}_windows_amd64.exe | awk '{print $1}')"
+    checksum: "$(shasum out/${GH_REPO}_windows_amd64.exe | awk '{print $1}')"
   - platform: linux64
     url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_linux_amd64"
-    checksum: "$(md5sum out/${GH_REPO}_linux_amd64 | awk '{print $1}')"
-  - platform: darwin
+    checksum: "$(shasum out/${GH_REPO}_linux_amd64 | awk '{print $1}')"
+  - platform: osx
     url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_darwin_amd64"
-    checksum: "$(md5sum out/${GH_REPO}_darwin_amd64 | awk '{print $1}')"
+    checksum: "$(shasum out/${GH_REPO}_darwin_amd64 | awk '{print $1}')"
 EOS
