@@ -47,16 +47,25 @@ It assumes that `<kibana-app>` is the [kibana-me-logs](https://github.com/cloudf
 Development
 -----------
 
+There is a helper to uninstall, build, install, and run the plugin:
+
+```
+./bin/run.sh <ARGS>
+```
+
+Or manually:
+
 ```
 cf uninstall-plugin kibana-me-logs
 go get ./...
 cf install-plugin $GOPATH/bin/cf-plugin-kibana-me-logs
+cf kibana-me-logs <ARGS>
 ```
 
 Or a one-liner:
 
 ```
-cf uninstall-plugin kibana-me-logs; go get ./...; cf install-plugin $GOPATH/bin/cf-plugin-kibana-me-logs
+cf uninstall-plugin kibana-me-logs; go get ./...; cf install-plugin $GOPATH/bin/cf-plugin-kibana-me-logs && cf kibana-me-logs <ARGS>
 ```
 
 ### Bump version
