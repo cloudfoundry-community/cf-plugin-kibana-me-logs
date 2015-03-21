@@ -8,8 +8,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cloudfoundry/cli/cf/api/resources"
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
+	"github.com/cloudfoundry/cli/cf/models"
 	"github.com/cloudfoundry/cli/plugin"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -26,23 +28,6 @@ func fatalWithMessageIf(err error, msg string) {
 		fmt.Println("ERROR:", msg)
 		os.Exit(1)
 	}
-}
-
-type appSearchMetaData struct {
-	GUID string `json:"guid"`
-	URL  string `json:"url"`
-}
-
-type appSearchResources struct {
-	Metadata appSearchMetaData `json:"metadata"`
-}
-
-type appSearchResults struct {
-	Resources []appSearchResources `json:"resources"`
-}
-
-type appEnv struct {
-	System map[string]interface{} `json:"system_env_json"`
 }
 
 type appEnvService struct {
@@ -139,17 +124,17 @@ func (c *KibanaMeAppPlugin) findAppGUID(appName string) string {
 	cmd := []string{"curl", appQuery}
 
 	output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
-	res := &appSearchResults{}
+	res := &resources.PaginatedApplicationResources{}
 	json.Unmarshal([]byte(strings.Join(output, "")), &res)
 
-	return res.Resources[0].Metadata.GUID
+	return res.Resources[0].Resource.Metadata.Guid
 }
 
 func (c *KibanaMeAppPlugin) findService(appGUID string, serviceName string) (logstash appEnvService, err error) {
 	appQuery := fmt.Sprintf("/v2/apps/%v/env", appGUID)
 	cmd := []string{"curl", appQuery}
 	output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
-	appEnvs := appEnv{}
+	appEnvs := models.Environment{}
 	json.Unmarshal([]byte(output[0]), &appEnvs)
 	str, err := json.Marshal(appEnvs.System["VCAP_SERVICES"])
 	if err != nil {
