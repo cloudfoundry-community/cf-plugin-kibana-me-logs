@@ -36,9 +36,15 @@ cat << EOS
   - platform: win64
     url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_windows_amd64.exe"
     checksum: "$(shasum out/${GH_REPO}_windows_amd64.exe | awk '{print $1}')"
+  - platform: win32
+    url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_windows_386.exe"
+    checksum: "$(shasum out/${GH_REPO}_windows_386.exe | awk '{print $1}')"
   - platform: linux64
     url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_linux_amd64"
     checksum: "$(shasum out/${GH_REPO}_linux_amd64 | awk '{print $1}')"
+  - platform: linux32
+    url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_linux_386"
+    checksum: "$(shasum out/${GH_REPO}_linux_386 | awk '{print $1}')"
   - platform: osx
     url: "https://github.com/$GH_ORG/$GH_REPO/releases/download/v$VERSION/${GH_REPO}_darwin_amd64"
     checksum: "$(shasum out/${GH_REPO}_darwin_amd64 | awk '{print $1}')"

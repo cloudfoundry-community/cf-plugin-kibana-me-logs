@@ -8,6 +8,7 @@ fi
 
 rm -f cf-plugin-kibana*
 
+gox -os linux -os windows -arch 386
 gox -os darwin -os linux -os windows -arch amd64
 
 rm -rf out
