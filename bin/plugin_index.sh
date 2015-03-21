@@ -15,8 +15,8 @@ export PROJECT_CREATED="2015-03-18"
 
 VERSION=$(<VERSION)
 
-if [[ "$(which md5sum)X" == "X" ]]; then
-  echo "md5sum not installed"
+if [[ "$(which shasum)X" == "X" ]]; then
+  echo "shasum not installed"
   exit 1
 fi
 
