@@ -13,7 +13,6 @@ import (
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/cf/models"
 	"github.com/cloudfoundry/cli/plugin"
-	"github.com/skratchdot/open-golang/open"
 )
 
 func fatalIf(err error) {
@@ -53,34 +52,25 @@ func main() {
 // Run is the entry function for a cf CLI plugin
 func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	c.cliConnection = cliConnection
-	if args[0] != "kibana-me-logs" || len(args) < 3 {
+	if args[0] != "kibana-me-logs" || len(args) < 2 {
 		cliConnection.CliCommand(args[0], "-h")
 	}
 
-	kibanaAppName, appName := args[1], args[2]
+	appName := args[1]
 
-	kibanaAppOutput, err := cliConnection.CliCommandWithoutTerminalOutput("app", kibanaAppName)
-	fatalWithMessageIf(err, "kibana app does not exist in this org/space")
-	kibanaGUID := c.findAppGUID(kibanaAppName)
+	confRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), fatalIf)
+	spaceGUID := confRepo.SpaceFields().Guid
 
-	_, err = cliConnection.CliCommandWithoutTerminalOutput("app", appName)
+	_, err := cliConnection.CliCommandWithoutTerminalOutput("app", appName)
 	fatalWithMessageIf(err, "app does not exist in this org/space")
-	appGUID := c.findAppGUID(appName)
+	appGUID := c.findAppGUID(spaceGUID, appName)
 
-	kibanaLogstash, err := c.findService(kibanaGUID, "logstash14")
-	fatalIf(err)
 	appLogstash, err := c.findService(appGUID, "logstash14")
 	fatalIf(err)
 
-	if appLogstash.Name != kibanaLogstash.Name {
-		fatalIf(fmt.Errorf("app and kibana do not share the same logstash14 service"))
-	}
+	kibana, _ := c.findAppNameBoundToServiceWithStartCommand(appLogstash, "kibana-me-logs")
+	fmt.Printf("kibana: %#v\n", kibana)
 
-	kibanaURLs, err := c.getURLFromOutput(kibanaAppOutput)
-	fatalIf(err)
-	kibanaBaseURL := kibanaURLs[0]
-	appURL := fmt.Sprintf("%s/#/dashboard/file/app-logs-%s.json", kibanaBaseURL, appGUID)
-	open.Run(appURL)
 }
 
 // GetMetadata is a CF plugin method for metadata about the plugin
@@ -108,18 +98,14 @@ func (c *KibanaMeAppPlugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "open kibana-me-logs for an application",
 
 				UsageDetails: plugin.Usage{
-					Usage: "kibana-me-logs <kibana-app-name> <app-name>",
+					Usage: "kibana-me-logs <app-name>",
 				},
 			},
 		},
 	}
 }
 
-func (c *KibanaMeAppPlugin) findAppGUID(appName string) string {
-
-	confRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), fatalIf)
-	spaceGUID := confRepo.SpaceFields().Guid
-
+func (c *KibanaMeAppPlugin) findAppGUID(spaceGUID string, appName string) string {
 	appQuery := fmt.Sprintf("/v2/spaces/%v/apps?q=name:%v&inline-relations-depth=1", spaceGUID, appName)
 	cmd := []string{"curl", appQuery}
 
@@ -130,7 +116,7 @@ func (c *KibanaMeAppPlugin) findAppGUID(appName string) string {
 	return res.Resources[0].Resource.Metadata.Guid
 }
 
-func (c *KibanaMeAppPlugin) findService(appGUID string, serviceName string) (logstash appEnvService, err error) {
+func (c *KibanaMeAppPlugin) findService(appGUID string, serviceName string) (service appEnvService, err error) {
 	appQuery := fmt.Sprintf("/v2/apps/%v/env", appGUID)
 	cmd := []string{"curl", appQuery}
 	output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
@@ -146,8 +132,13 @@ func (c *KibanaMeAppPlugin) findService(appGUID string, serviceName string) (log
 		err = fmt.Errorf("app is not bound to a %s service", serviceName)
 		return
 	}
-	logstash = services[serviceName][0]
+	service = services[serviceName][0]
 	return
+}
+
+func (c *KibanaMeAppPlugin) findAppNameBoundToServiceWithStartCommand(service appEnvService, startCommand string) (appName string, err error) {
+	fmt.Printf("service: %#v\n", service)
+	return "test", nil
 }
 
 // extracted from cf-plugin-open
