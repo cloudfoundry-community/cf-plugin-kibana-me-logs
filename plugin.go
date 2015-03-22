@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -67,15 +66,15 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 
 	logstashGUID, err := c.findServiceInstanceGUID(appGUID, "logstash14")
 	fatalIf(err)
-	fmt.Println(logstashGUID)
 
 	boundApps, err := c.findAppsBoundToService(logstashGUID)
-	fatalIf(err)
 
 	kibana, err := c.filterAppWithStartCommand(boundApps, "kibana-me-logs")
 	fatalIf(err)
 
-	fmt.Printf("kibana: %#v\n", kibana)
+	route, err := c.firstAppRoute(kibana)
+	fatalIf(err)
+	fmt.Println(route)
 }
 
 // GetMetadata is a CF plugin method for metadata about the plugin
@@ -122,7 +121,6 @@ func (c *KibanaMeAppPlugin) findAppGUID(spaceGUID string, appName string) string
 }
 
 func (c *KibanaMeAppPlugin) findServiceInstanceGUID(appGUID string, serviceName string) (serviceInstanceGUID string, err error) {
-	fmt.Println("findServiceInstanceGUID", appGUID, serviceName)
 	// http://apidocs.cloudfoundry.org/204/apps/list_all_service_bindings_for_the_app.html
 	// then find which binding -> maps to service with "serviceName"
 	//   -> service_instance_url -> entity.name
@@ -179,35 +177,33 @@ func (c *KibanaMeAppPlugin) findServiceFromInstance(serviceInstance *cftype.Retr
 }
 
 func (c *KibanaMeAppPlugin) findAppsBoundToService(serviceInstanceGUID string) (appGUIDs []string, err error) {
-	fmt.Println("findAppsBoundToService", serviceInstanceGUID)
-	// appQuery := fmt.Sprintf("/v2/service_instances/%s/service_bindings", serviceInstanceGUID)
-	// cmd := []string{"curl", appQuery}
-	// output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
+	bindings := &cftype.ListAllServiceBindingsForTheServiceInstance{}
 
-	return []string{}, fmt.Errorf("Not implemented: findAppsBoundToService")
+	appQuery := fmt.Sprintf("/v2/service_instances/%s/service_bindings", serviceInstanceGUID)
+	cmd := []string{"curl", appQuery}
+	output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
+
+	json.Unmarshal([]byte(strings.Join(output, "")), &bindings)
+
+	for _, binding := range bindings.Resources {
+		appGUIDs = append(appGUIDs, binding.Entity.AppGUID)
+	}
+	return
 }
 
-func (c *KibanaMeAppPlugin) filterAppWithStartCommand(appGUIDs []string, startCommand string) (appName string, err error) {
-	return "", fmt.Errorf("Not implemented: filterAppWithStartCommand")
-}
-
-// extracted from cf-plugin-open
-func (c *KibanaMeAppPlugin) getURLFromOutput(output []string) ([]string, error) {
-	urls := []string{}
-	for _, line := range output {
-		splitLine := strings.Split(strings.TrimSpace(line), " ")
-		if splitLine[0] == "urls:" {
-			if len(splitLine) > 1 {
-				for p := 1; p < len(splitLine); p++ {
-					url := "http://" + strings.Trim(splitLine[p], ",")
-					url = strings.TrimSpace(url)
-					urls = append(urls, url)
-				}
-
-			} else if len(splitLine) == 1 {
-				return []string{""}, errors.New("App has no route")
-			}
+func (c *KibanaMeAppPlugin) filterAppWithStartCommand(appGUIDs []string, startCommand string) (app *cftype.RetrieveAParticularApp, err error) {
+	for _, appGUID := range appGUIDs {
+		app = &cftype.RetrieveAParticularApp{}
+		cmd := []string{"curl", fmt.Sprintf("/v2/apps/%s", appGUID)}
+		output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
+		json.Unmarshal([]byte(strings.Join(output, "")), &app)
+		if app.Entity.DetectedStartCommand == startCommand {
+			return app, nil
 		}
 	}
-	return urls, nil
+	return nil, fmt.Errorf("No application found with start command '%s'", startCommand)
+}
+
+func (c *KibanaMeAppPlugin) firstAppRoute(app *cftype.RetrieveAParticularApp) (route string, err error) {
+	return
 }
