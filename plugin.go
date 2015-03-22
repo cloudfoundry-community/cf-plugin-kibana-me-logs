@@ -12,6 +12,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/plugin"
+	"github.com/skratchdot/open-golang/open"
 )
 
 func fatalIf(err error) {
@@ -75,8 +76,10 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	fullRoute, err := c.firstAppRoute(kibana)
 	fatalIf(err)
 
-	kibanaURI := c.routeToURI(confRepo.IsSSLDisabled(), fullRoute)
-	fmt.Println(kibanaURI)
+	kibanaBaseURL := c.routeToURI(confRepo.IsSSLDisabled(), fullRoute)
+
+	appURL := fmt.Sprintf("%s/#/dashboard/file/app-logs-%s.json", kibanaBaseURL, appGUID)
+	open.Run(appURL)
 }
 
 // GetMetadata is a CF plugin method for metadata about the plugin
