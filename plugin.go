@@ -72,9 +72,9 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	kibana, err := c.filterAppWithStartCommand(boundApps, "kibana-me-logs")
 	fatalIf(err)
 
-	route, err := c.firstAppRoute(kibana)
+	fullRoute, err := c.firstAppRoute(kibana)
 	fatalIf(err)
-	fmt.Println(route)
+	fmt.Println(fullRoute)
 }
 
 // GetMetadata is a CF plugin method for metadata about the plugin
@@ -204,6 +204,24 @@ func (c *KibanaMeAppPlugin) filterAppWithStartCommand(appGUIDs []string, startCo
 	return nil, fmt.Errorf("No application found with start command '%s'", startCommand)
 }
 
-func (c *KibanaMeAppPlugin) firstAppRoute(app *cftype.RetrieveAParticularApp) (route string, err error) {
-	return
+func (c *KibanaMeAppPlugin) firstAppRoute(app *cftype.RetrieveAParticularApp) (fullRoute string, err error) {
+	routes := &cftype.ListAllRoutesForTheApp{}
+	cmd := []string{"curl", app.Entity.RoutesURL}
+	output, _ := c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
+	json.Unmarshal([]byte(strings.Join(output, "")), &routes)
+
+	if routes.TotalResults == 0 {
+		return "", fmt.Errorf("App '%s' has no routes", app.Entity.Name)
+	}
+	route := routes.Resources[0]
+
+	domain := &cftype.RetrieveAParticularDomain{}
+	cmd = []string{"curl", route.Entity.DomainURL}
+	output, _ = c.cliConnection.CliCommandWithoutTerminalOutput(cmd...)
+	json.Unmarshal([]byte(strings.Join(output, "")), &domain)
+
+	if route.Entity.Host != "" {
+		return fmt.Sprintf("%s.%s", route.Entity.Host, domain.Entity.Name), nil
+	}
+	return domain.Entity.Name, nil
 }
