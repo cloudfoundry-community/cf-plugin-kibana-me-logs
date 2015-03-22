@@ -74,7 +74,9 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 
 	fullRoute, err := c.firstAppRoute(kibana)
 	fatalIf(err)
-	fmt.Println(fullRoute)
+
+	kibanaURI := c.routeToURI(confRepo.IsSSLDisabled(), fullRoute)
+	fmt.Println(kibanaURI)
 }
 
 // GetMetadata is a CF plugin method for metadata about the plugin
@@ -224,4 +226,11 @@ func (c *KibanaMeAppPlugin) firstAppRoute(app *cftype.RetrieveAParticularApp) (f
 		return fmt.Sprintf("%s.%s", route.Entity.Host, domain.Entity.Name), nil
 	}
 	return domain.Entity.Name, nil
+}
+
+func (c *KibanaMeAppPlugin) routeToURI(isSSLDisabled bool, route string) string {
+	if isSSLDisabled {
+		return fmt.Sprintf("http://%s", route)
+	}
+	return fmt.Sprintf("https://%s", route)
 }
