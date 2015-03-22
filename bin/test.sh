@@ -17,6 +17,12 @@ if [[ ! -d tmp/kibana-me-logs ]]; then
   mkdir -p tmp
   git clone https://github.com/cloudfoundry-community/kibana-me-logs tmp/kibana-me-logs
 fi
+
+if [[ ! -d tmp/simple-go-web-app ]]; then
+  mkdir -p tmp
+  git clone https://github.com/cloudfoundry-community/simple-go-web-app tmp/simple-go-web-app
+fi
+
 cd tmp/kibana-me-logs
 
 cf push kibana-one --no-start
@@ -29,20 +35,37 @@ cf start kibana-two
 
 cd ../..
 
-if [[ ! -d tmp/cf-env ]]; then
-  mkdir -p tmp
-  git clone https://github.com/cloudfoundry-community/cf-env tmp/cf-env
-  cd ..
-fi
-cd tmp/cf-env
+cd tmp/simple-go-web-app
 
-cf push cf-env-one --no-start
-cf bs cf-env-one logstash-one
-cf start cf-env-one
+cf push one --no-start
+cf bs one logstash-one
+cf set-env one MESSAGE "I am one"
+cf start one
 
-cf push cf-env-two --no-start
-cf bs cf-env-two logstash-two
-cf start cf-env-two
+cf push two --no-start
+cf bs two logstash-one
+cf set-env two MESSAGE "I am two"
+cf start two
 
-cf kibana-me-logs cf-env-one
-cf kibana-me-logs cf-env-two
+cf push three --no-start
+cf bs three logstash-one
+cf set-env three MESSAGE "I am three"
+cf start three
+
+cf push dedicated-logs --no-start
+cf bs dedicated-logs logstash-two
+cf set-env dedicated-logs MESSAGE "I have a dedicated logstash"
+cf start dedicated-logs
+
+set +e
+# install `open` plugin
+cf open one
+cf kibana-me-logs one
+cf open two
+cf kibana-me-logs two
+cf open three
+cf kibana-me-logs three
+cf open dedicated-logs
+cf kibana-me-logs dedicated-logs
+
+cd ../..
