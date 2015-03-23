@@ -66,7 +66,9 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	appGUID := c.findAppGUID(spaceGUID, appName)
 
 	logstashGUID, logstashName, err := c.findServiceInstanceGUIDName(appGUID, "logstash14")
-	fatalIf(err)
+	if err != nil {
+		fatalIf(fmt.Errorf("App `%s' is not draining logs to a logstash14 service.", appName))
+	}
 
 	boundApps, err := c.findAppsBoundToService(logstashGUID)
 
