@@ -23,9 +23,9 @@ github-release release \
     --name "v${VERSION} - ${NAME}" \
     --description "${DESCRIPTION}"
 
-oses=( darwin linux windows )
-for os in "${oses[@]}"; do
-  asset=$(ls ${PKG_DIR}/${GH_REPO}_${os}_amd64* | head -n 1)
+os_arches=( darwin_amd64 linux_386 linux_amd64 windows_386 windows_amd64 )
+for os_arch in "${os_arches[@]}"; do
+  asset=$(ls ${PKG_DIR}/${GH_REPO}_${os_arch}* | head -n 1)
   filename="${asset##*/}"
 
   echo "Uploading $filename..."
