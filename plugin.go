@@ -65,13 +65,15 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	fatalWithMessageIf(err, "app does not exist in this org/space")
 	appGUID := c.findAppGUID(spaceGUID, appName)
 
-	logstashGUID, err := c.findServiceInstanceGUID(appGUID, "logstash14")
+	logstashGUID, logstashName, err := c.findServiceInstanceGUIDName(appGUID, "logstash14")
 	fatalIf(err)
 
 	boundApps, err := c.findAppsBoundToService(logstashGUID)
 
 	kibana, err := c.filterAppWithStartCommand(boundApps, "kibana-me-logs")
-	fatalIf(err)
+	if err != nil {
+		fatalIf(fmt.Errorf("App `%s' service `%s' not yet bound to a kibana-me-logs app.", appName, logstashName))
+	}
 
 	fullRoute, err := c.firstAppRoute(kibana)
 	fatalIf(err)
@@ -125,7 +127,7 @@ func (c *KibanaMeAppPlugin) findAppGUID(spaceGUID string, appName string) string
 	return res.Resources[0].Resource.Metadata.Guid
 }
 
-func (c *KibanaMeAppPlugin) findServiceInstanceGUID(appGUID string, serviceName string) (serviceInstanceGUID string, err error) {
+func (c *KibanaMeAppPlugin) findServiceInstanceGUIDName(appGUID string, serviceName string) (serviceInstanceGUID string, serviceInstanceName string, err error) {
 	// http://apidocs.cloudfoundry.org/204/apps/list_all_service_bindings_for_the_app.html
 	// then find which binding -> maps to service with "serviceName"
 	//   -> service_instance_url -> entity.name
@@ -142,10 +144,10 @@ func (c *KibanaMeAppPlugin) findServiceInstanceGUID(appGUID string, serviceName 
 		service, err := c.findServiceFromInstance(serviceInstance)
 		fatalIf(err)
 		if service.Entity.Label == serviceName {
-			return serviceInstance.Metadata.GUID, nil
+			return serviceInstance.Metadata.GUID, serviceInstance.Entity.Name, nil
 		}
 	}
-	return "", fmt.Errorf("No service bindings for %s", serviceName)
+	return "", "", fmt.Errorf("No service bindings for %s", serviceName)
 }
 
 func (c *KibanaMeAppPlugin) findServiceInstance(serviceInstanceURL string) (service *cftype.RetrieveAParticularServiceInstance, err error) {
