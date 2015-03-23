@@ -68,10 +68,16 @@ Or a one-liner:
 cf uninstall-plugin kibana-me-logs; go get ./...; cf install-plugin $GOPATH/bin/cf-plugin-kibana-me-logs && cf kibana-me-logs <ARGS>
 ```
 
-### Bump version
+### Bump version & release
 
 There is a helper script to bump the version number `VERSION` file and regenerate the gobindata `version.go` file:
 
 ```
-./bin/bump_version.sh X.Y.Z
+export VERSION=X.Y.Z
+./bin/bump_version.sh $VERSION
+git commit -a -m "bump v$VERSION"
+git push
+./bin/build.sh
+./bin/release.sh
+./bin/plugin_index.sh
 ```
