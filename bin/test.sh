@@ -14,11 +14,6 @@ set +e
 cf kibana-me-logs unknown
 set -e
 
-if [[ ! -d tmp/kibana-me-logs ]]; then
-  mkdir -p tmp
-  git clone https://github.com/cloudfoundry-community/kibana-me-logs tmp/kibana-me-logs
-fi
-
 if [[ ! -d tmp/simple-go-web-app ]]; then
   mkdir -p tmp
   git clone https://github.com/cloudfoundry-community/simple-go-web-app tmp/simple-go-web-app
@@ -31,17 +26,18 @@ cf start one
 cd ../..
 
 set +e
+echo Try to open kibana; except app not bound to logstash
 cf kibana-me-logs one
 set -e
 
+echo Bind app to logstash
 cf cs logstash14 free logstash-one
-cf cs logstash14 free logstash-two
 
 cf bs one logstash-one
 cf restart one
-set +e
+
+echo "Should auto-deploy kibana UI since it isn't already running"
 cf kibana-me-logs one
-set -e
 
 
 cd tmp/kibana-me-logs
@@ -52,6 +48,8 @@ cf start kibana-one
 
 cf kibana-me-logs one
 
+# Try a 2nd logstash/kibana
+cf cs logstash14 free logstash-two
 
 cf push kibana-two --no-start
 cf bs kibana-two logstash-two

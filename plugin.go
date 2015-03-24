@@ -57,6 +57,8 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	}
 
 	appName := args[1]
+	// TODO: Allow this to be configured by user; and by build tools
+	kibanaMeLogsRepo := "https://github.com/cloudfoundry-community/kibana-me-logs"
 
 	confRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), fatalIf)
 	spaceGUID := confRepo.SpaceFields().Guid
@@ -74,7 +76,13 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 
 	kibana, err := c.filterAppWithStartCommand(boundApps, "kibana-me-logs")
 	if err != nil {
-		fatalIf(fmt.Errorf("App `%s' service `%s' not yet bound to a kibana-me-logs app.", appName, logstashName))
+		fmt.Printf("App `%s' service `%s' not yet bound to a kibana-me-logs app. Deploying...\n", appName, logstashName)
+		fmt.Printf("Cloning %s...\n", kibanaMeLogsRepo)
+	}
+
+	kibana, err = c.filterAppWithStartCommand(boundApps, "kibana-me-logs")
+	if err != nil {
+		fatalIf(fmt.Errorf("Deployment failed. App `%s' service `%s' still not bound to a kibana-me-logs app.", appName, logstashName))
 	}
 
 	fullRoute, err := c.firstAppRoute(kibana)
