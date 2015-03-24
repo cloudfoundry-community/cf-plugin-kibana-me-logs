@@ -7,10 +7,10 @@ if [[ "${new_version}X" == "X" ]]; then
   exit 1
 fi
 
-if [[ "$(which go-bindata)X" == "X" ]]; then
-  echo "Installing go-bindata..."
-  go get -u github.com/jteeuwen/go-bindata/...
-fi
-
 echo $new_version > VERSION
-go-bindata -o version.go VERSION
+cat >version.go <<EOL
+package main
+
+// VERSION of plugin
+var VERSION = "${new_version}"
+EOL

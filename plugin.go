@@ -88,12 +88,7 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 
 // GetMetadata is a CF plugin method for metadata about the plugin
 func (c *KibanaMeAppPlugin) GetMetadata() plugin.PluginMetadata {
-	version, err := Asset("VERSION")
-	if err != nil {
-		fmt.Println("VERSION go-bindata asset not found")
-		version = []byte("0.0.0")
-	}
-	versionParts := strings.Split(string(version), ".")
+	versionParts := strings.Split(string(VERSION), ".")
 	major, _ := strconv.Atoi(versionParts[0])
 	minor, _ := strconv.Atoi(versionParts[1])
 	patch, _ := strconv.Atoi(strings.TrimSpace(versionParts[2]))
