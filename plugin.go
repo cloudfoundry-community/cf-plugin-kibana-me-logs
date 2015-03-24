@@ -248,7 +248,7 @@ func (c *KibanaMeAppPlugin) routeToURI(isSSLDisabled bool, route string) string 
 
 // Uses KibanaMeLogsRepo from distribution_config.go to determine which repo to clone
 func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceName string) error {
-	kibanaAppName := "kibana-me-logs"
+	kibanaAppName := fmt.Sprintf("kibana-%s", logstashServiceInstanceName)
 
 	tmpDir := os.Getenv("TMPDIR")
 	if tmpDir == "" {
@@ -266,21 +266,21 @@ func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceNa
 		return err
 	}
 
-	fmt.Println("Pushing kibana-me-logs...")
+	fmt.Printf("Pushing kibana-me-logs as %s...\n", kibanaAppName)
 	cmd = exec.Command("cf", "push", kibanaAppName, "--no-start", "-p", dir)
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Binding to %s...\n", logstashServiceInstanceName)
+	fmt.Printf("Binding %s to %s...\n", kibanaAppName, logstashServiceInstanceName)
 	cmd = exec.Command("cf", "bind-service", kibanaAppName, logstashServiceInstanceName)
 	err = cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Starting kibana-me-logs...")
+	fmt.Printf("Starting %s...\n", kibanaAppName)
 	cmd = exec.Command("cf", "start", kibanaAppName)
 	return cmd.Run()
 }

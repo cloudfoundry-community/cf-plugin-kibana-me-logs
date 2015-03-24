@@ -44,19 +44,15 @@ cf kibana-me-logs one
 # Try a 2nd logstash/kibana
 cf cs logstash14 free logstash-two
 
-if [[ ! -d tmp/kibana-me-logs ]]; then
-  mkdir -p tmp
-  git clone https://github.com/cloudfoundry-community/kibana-me-logs tmp/kibana-me-logs
-fi
-cd tmp/kibana-me-logs
-
-cf push kibana-two --no-start
-cf bs kibana-two logstash-two
-cf start kibana-two
-
-cd ../..
-
 cd tmp/simple-go-web-app
+cf push dedicated-logs --no-start
+cf bs dedicated-logs logstash-two
+cf set-env dedicated-logs MESSAGE "I have a dedicated logstash"
+cf start dedicated-logs
+
+echo "Auto-deploy kibana for 2nd logstash14 (via the app)"
+cf kibana-me-logs dedicated-logs
+
 
 cf push two --no-start
 cf bs two logstash-one
@@ -67,11 +63,6 @@ cf push three --no-start
 cf bs three logstash-one
 cf set-env three MESSAGE "I am three"
 cf start three
-
-cf push dedicated-logs --no-start
-cf bs dedicated-logs logstash-two
-cf set-env dedicated-logs MESSAGE "I have a dedicated logstash"
-cf start dedicated-logs
 
 set +e
 # install `open` plugin
