@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -57,8 +59,6 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	}
 
 	appName := args[1]
-	// TODO: Allow this to be configured by user; and by build tools
-	kibanaMeLogsRepo := "https://github.com/cloudfoundry-community/kibana-me-logs"
 
 	confRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), fatalIf)
 	spaceGUID := confRepo.SpaceFields().Guid
@@ -73,13 +73,14 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	}
 
 	boundApps, err := c.findAppsBoundToService(logstashGUID)
-
 	kibana, err := c.filterAppWithStartCommand(boundApps, "kibana-me-logs")
 	if err != nil {
 		fmt.Printf("App `%s' service `%s' not yet bound to a kibana-me-logs app. Deploying...\n", appName, logstashName)
-		fmt.Printf("Cloning %s...\n", kibanaMeLogsRepo)
+		err = c.cloneAndDeployKibanaMeLogs(logstashName)
+		fatalIf(err)
 	}
 
+	boundApps, err = c.findAppsBoundToService(logstashGUID)
 	kibana, err = c.filterAppWithStartCommand(boundApps, "kibana-me-logs")
 	if err != nil {
 		fatalIf(fmt.Errorf("Deployment failed. App `%s' service `%s' still not bound to a kibana-me-logs app.", appName, logstashName))
@@ -243,4 +244,43 @@ func (c *KibanaMeAppPlugin) routeToURI(isSSLDisabled bool, route string) string 
 		return fmt.Sprintf("http://%s", route)
 	}
 	return fmt.Sprintf("https://%s", route)
+}
+
+// Uses KibanaMeLogsRepo from distribution_config.go to determine which repo to clone
+func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceName string) error {
+	kibanaAppName := "kibana-me-logs"
+
+	tmpDir := os.Getenv("TMPDIR")
+	if tmpDir == "" {
+		tmpDir = "/tmp"
+	}
+	dir, err := ioutil.TempDir(tmpDir, "kibana")
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Cloning %s...\n", KibanaMeLogsRepo)
+	cmd := exec.Command("git", "clone", KibanaMeLogsRepo, dir)
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Pushing kibana-me-logs...")
+	cmd = exec.Command("cf", "push", kibanaAppName, "--no-start", "-p", dir)
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Binding to %s...\n", logstashServiceInstanceName)
+	cmd = exec.Command("cf", "bind-service", kibanaAppName, logstashServiceInstanceName)
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Starting kibana-me-logs...")
+	cmd = exec.Command("cf", "start", kibanaAppName)
+	return cmd.Run()
 }

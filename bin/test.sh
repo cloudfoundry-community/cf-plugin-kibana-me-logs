@@ -11,7 +11,8 @@ cf create-space cf-plugin-kibana-me-logs-test
 cf target -s cf-plugin-kibana-me-logs-test
 
 set +e
-cf kibana-me-logs unknown
+# use run.sh first time to rebuild/reinstall plugin
+./bin/run.sh one
 set -e
 
 if [[ ! -d tmp/simple-go-web-app ]]; then
@@ -26,7 +27,7 @@ cf start one
 cd ../..
 
 set +e
-echo Try to open kibana; except app not bound to logstash
+echo "Try to open kibana; except app not bound to logstash"
 cf kibana-me-logs one
 set -e
 
@@ -40,16 +41,14 @@ echo "Should auto-deploy kibana UI since it isn't already running"
 cf kibana-me-logs one
 
 
-cd tmp/kibana-me-logs
-
-cf push kibana-one --no-start
-cf bs kibana-one logstash-one
-cf start kibana-one
-
-cf kibana-me-logs one
-
 # Try a 2nd logstash/kibana
 cf cs logstash14 free logstash-two
+
+if [[ ! -d tmp/kibana-me-logs ]]; then
+  mkdir -p tmp
+  git clone https://github.com/cloudfoundry-community/kibana-me-logs tmp/kibana-me-logs
+fi
+cd tmp/kibana-me-logs
 
 cf push kibana-two --no-start
 cf bs kibana-two logstash-two
