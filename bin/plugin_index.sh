@@ -9,7 +9,7 @@ export HOMEPAGE=http://drnicwilliams.com
 export GH_ORG=${GH_ORG:-cloudfoundry-community}
 export GH_REPO=${GH_REPO:-cf-plugin-kibana-me-logs}
 export NAME=${NAME:-"kibana-me-logs"}
-export DESCRIPTION=${DESCRIPTION:-"Launches the Kibana UI (from [kibana-me-logs](https://github.com/cloudfoundry-community/kibana-me-logs)\) for an application."}
+export DESCRIPTION=${DESCRIPTION:-"Launches the Kibana UI (from kibana-me-logs) for an application."}
 export PKG_DIR=${PKG_DIR:=out}
 export PROJECT_CREATED="2015-03-18"
 
