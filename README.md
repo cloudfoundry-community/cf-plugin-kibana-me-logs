@@ -3,7 +3,7 @@ Overview
 
 Launches the Kibana UI (from [kibana-me-logs](https://github.com/cloudfoundry-community/kibana-me-logs)\) for an application.
 
-![demo](http://cl.ly/image/3r3n1E2l241P/cf%20kibana-me-logs.gif)
+![demo](http://cl.ly/image/2H1x2m1B3m0v/cf%20kibana-me-logs%20v0.3.gif)
 
 Learn more about using CLI plugins from https://blog.starkandwayne.com/2015/03/04/installing-cloud-foundry-cli-plugins/
 
