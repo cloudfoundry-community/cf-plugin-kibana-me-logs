@@ -17,12 +17,7 @@ $ cf add-plugin-repo community http://plugins.cfapps.io/
 $ cf install-plugin kibana-me-logs -r community
 ```
 
-From source:
-
-```
-$ go get github.com/cloudfoundry-community/cf-plugin-kibana-me-logs
-$ cf install-plugin $GOPATH/bin/cf-plugin-kibana-me-logs
-```
+From source, see the Development section below.
 
 Upgrade
 -------
@@ -46,6 +41,21 @@ It assumes that `<kibana-app>` is the [kibana-me-logs](https://github.com/cloudf
 
 Development
 -----------
+
+To build from source, first fetch the Cloud Foundry CLI project and generate its internal go files:
+
+```
+go get github.com/cloudfoundry/cli/cf
+cd $GOPATH/src/github.com/cloudfoundry/cli
+./bin/build
+```
+
+Next fetch this project:
+
+```
+$ go get github.com/cloudfoundry-community/cf-plugin-kibana-me-logs
+$ cf install-plugin $GOPATH/bin/cf-plugin-kibana-me-logs
+```
 
 There is a helper to uninstall, build, install, and run the plugin:
 
