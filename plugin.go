@@ -133,7 +133,7 @@ func (c *KibanaMeAppPlugin) findAppGUID(spaceGUID string, appName string) string
 	return res.Resources[0].Resource.Metadata.Guid
 }
 
-func (c *KibanaMeAppPlugin) findServiceInstanceGUIDName(appGUID string, serviceName string) (serviceInstanceGUID string, serviceInstanceName string, err error) {
+func (c *KibanaMeAppPlugin) findServiceInstanceGUIDName(appGUID string, needle string) (serviceInstanceGUID string, serviceInstanceName string, err error) {
 	// http://apidocs.cloudfoundry.org/204/apps/list_all_service_bindings_for_the_app.html
 	// then find which binding -> maps to service with "serviceName"
 	//   -> service_instance_url -> entity.name
@@ -149,11 +149,13 @@ func (c *KibanaMeAppPlugin) findServiceInstanceGUIDName(appGUID string, serviceN
 		fatalIf(err)
 		service, err := c.findServiceFromInstance(serviceInstance)
 		fatalIf(err)
-		if service.Entity.Label == serviceName {
-			return serviceInstance.Metadata.GUID, serviceInstance.Entity.Name, nil
+		for _, tag := range service.Entity.Tags {
+			if tag == needle {
+				return serviceInstance.Metadata.GUID, serviceInstance.Entity.Name, nil
+			}
 		}
 	}
-	return "", "", fmt.Errorf("No service bindings for %s", serviceName)
+	return "", "", fmt.Errorf("No service bindings for services tagged %s", needle)
 }
 
 func (c *KibanaMeAppPlugin) findServiceInstance(serviceInstanceURL string) (service *cftype.RetrieveAParticularServiceInstance, err error) {
