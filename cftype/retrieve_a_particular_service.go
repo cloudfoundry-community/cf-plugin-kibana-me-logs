@@ -18,5 +18,6 @@ type RetrieveAParticularServiceMetadata struct {
 
 // RetrieveAParticularServiceEntity ...
 type RetrieveAParticularServiceEntity struct {
-	Label string `json:"label"`
+	Label string   `json:"label"`
+	Tags  []string `json:"tags"`
 }
