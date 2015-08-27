@@ -91,3 +91,10 @@ git push
 ./bin/release.sh
 ./bin/plugin_index.sh
 ```
+
+Put the output from `plugin_index.sh` into the
+[cloudfoundry-incubator/cli-plugin-repo][1] repository and
+submit a pull request to update http://plugins.cloudfoundry.org
+
+
+[1]: https://github.com/cloudfoundry-incubator/cli-plugin-repo
