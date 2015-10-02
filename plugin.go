@@ -14,6 +14,7 @@ import (
 	"github.com/cloudfoundry/cli/cf/configuration/config_helpers"
 	"github.com/cloudfoundry/cli/cf/configuration/core_config"
 	"github.com/cloudfoundry/cli/plugin"
+	"github.com/elgs/gostrgen"
 	"github.com/skratchdot/open-golang/open"
 )
 
@@ -43,7 +44,10 @@ type appEnvServices map[string][]appEnvService
 
 // KibanaMeAppPlugin is the type for the plugin functions
 type KibanaMeAppPlugin struct {
-	cliConnection plugin.CliConnection
+	cliConnection  plugin.CliConnection
+	shouldAuth     bool
+	kibanaUser     string
+	kibanaPassword string
 }
 
 func main() {
@@ -59,6 +63,10 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	}
 
 	appName := args[1]
+	c.shouldAuth = true
+	if len(args) > 2 && args[2] == "--no-auth" {
+		c.shouldAuth = false
+	}
 
 	confRepo := core_config.NewRepositoryFromFilepath(config_helpers.DefaultFilePath(), fatalIf)
 	spaceGUID := confRepo.SpaceFields().Guid
@@ -242,6 +250,9 @@ func (c *KibanaMeAppPlugin) firstAppRoute(app *cftype.RetrieveAParticularApp) (f
 }
 
 func (c *KibanaMeAppPlugin) routeToURI(isSSLDisabled bool, route string) string {
+	if c.shouldAuth {
+		route = fmt.Sprintf("%s:%s@%s", c.kibanaUser, c.kibanaPassword, route)
+	}
 	if isSSLDisabled {
 		return fmt.Sprintf("http://%s", route)
 	}
@@ -280,6 +291,27 @@ func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceNa
 	err = cmd.Run()
 	if err != nil {
 		return err
+	}
+
+	if c.shouldAuth {
+		c.kibanaUser = kibanaAppName
+		c.kibanaPassword, err = gostrgen.RandGen(20, gostrgen.All, "", "")
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Setting credentials for %s to %s / %s (user / pass)\n", kibanaAppName, c.kibanaUser, c.kibanaPassword)
+		cmd = exec.Command("cf", "set-env", kibanaAppName, "KIBANA_USERNAME", c.kibanaUser)
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+
+		cmd = exec.Command("cf", "set-env", kibanaAppName, "KIBANA_PASSWORD", c.kibanaPassword)
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Starting %s...\n", kibanaAppName)
