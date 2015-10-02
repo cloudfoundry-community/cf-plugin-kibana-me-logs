@@ -97,7 +97,14 @@ func (c *KibanaMeAppPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	fullRoute, err := c.firstAppRoute(kibana)
 	fatalIf(err)
 
+	fmt.Printf("\n\nDeployment successful!\n")
+	if c.shouldAuth {
+		fmt.Printf("Username: %s\n", c.kibanaUser)
+		fmt.Printf("Password: %s\n", c.kibanaPassword)
+	}
+
 	kibanaBaseURL := c.routeToURI(confRepo.IsSSLDisabled(), fullRoute)
+	fmt.Printf("\nYou can see your kibana-me-logs app at:\n%s\n", kibanaBaseURL)
 
 	appURL := fmt.Sprintf("%s/#/dashboard/file/app-logs-%s.json", kibanaBaseURL, appGUID)
 	open.Run(appURL)
@@ -316,5 +323,6 @@ func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceNa
 
 	fmt.Printf("Starting %s...\n", kibanaAppName)
 	cmd = exec.Command("cf", "start", kibanaAppName)
+
 	return cmd.Run()
 }
