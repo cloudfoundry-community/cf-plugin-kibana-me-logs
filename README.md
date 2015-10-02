@@ -32,12 +32,12 @@ Usage
 -----
 
 ```
-$ cf kibana-me-logs <kibana-app> <app> [--no-auth]
+$ cf kibana-me-logs <app> [--no-auth]
 ```
 
 Will launch the Kibana UI and show logs for the requested app.
 
-It assumes that `<kibana-app>` is the [kibana-me-logs](https://github.com/cloudfoundry-community/kibana-me-logs)\), and both are bound to the same `logstash14` logstash service.
+It assumes that `<app>` is the an app bound to the same `logstash14` logstash service.
 
 `cf-kibana-me-logs` will automatically generate a user/password for you to use in conjunction with your kibana-me-logs app, unless you provide the --no-auth option.
 
