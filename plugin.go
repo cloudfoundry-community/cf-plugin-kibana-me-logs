@@ -266,29 +266,35 @@ func (c *KibanaMeAppPlugin) routeToURI(isSSLDisabled bool, route string) string 
 	return fmt.Sprintf("https://%s", route)
 }
 
-// Uses KibanaMeLogsRepo from distribution_config.go to determine which repo to clone
+// Uses kibanaMeLogsRepo() from distribution_config.go to determine which repo to clone
 func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceName string) error {
 	kibanaAppName := fmt.Sprintf("kibana-%s", logstashServiceInstanceName)
 
-	tmpDir := os.Getenv("TMPDIR")
-	if tmpDir == "" {
-		tmpDir = "/tmp"
-	}
-	dir, err := ioutil.TempDir(tmpDir, "kibana")
-	if err != nil {
-		return err
+	var dir string
+	if dir = os.Getenv("KIBANA_ME_LOGS_APP_DIR"); dir == "" {
+		tmpDir := os.Getenv("TMPDIR")
+		if tmpDir == "" {
+			tmpDir = "/tmp"
+		}
+		var err error
+		dir, err = ioutil.TempDir(tmpDir, "kibana")
+		if err != nil {
+			return err
+		}
+
+		var repo = kibanaMeLogsRepo()
+		fmt.Printf("Cloning %s...\n", repo)
+		cmd := exec.Command("git", "clone", repo, dir)
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Printf("Cloning %s...\n", KibanaMeLogsRepo)
-	cmd := exec.Command("git", "clone", KibanaMeLogsRepo, dir)
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
+	fmt.Printf("Using %s as kibana-me-logs source directory\n", dir)
 	fmt.Printf("Pushing kibana-me-logs as %s...\n", kibanaAppName)
-	cmd = exec.Command("cf", "push", kibanaAppName, "--no-start", "-p", dir)
-	err = cmd.Run()
+	cmd := exec.Command("cf", "push", kibanaAppName, "--no-start", "-p", dir)
+	err := cmd.Run()
 	if err != nil {
 		return err
 	}

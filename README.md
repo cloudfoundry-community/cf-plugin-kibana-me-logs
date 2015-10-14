@@ -41,6 +41,19 @@ It assumes that `<app>` is the an app bound to the same `logstash14` logstash se
 
 `cf kibana-me-logs` will automatically generate a user/password for you to use in conjunction with your kibana-me-logs app, unless you provide the --no-auth option.
 
+Advanced Usage
+--------------
+
+To use a custom kibana-me-logs repo, specify the repo URL in the `KIBANA_ME_LOGS_REPO`
+environment variable.
+
+To bypass cloning kibana-me-logs, and use a local source directory, specify the path in the
+`KIBANA_ME_LOGS_APP_DIR` environment variable.
+
+To use a custom temp directory (overriding `/tmp`), for holding the kibana-me-logs repo being
+pushed, use the `TMP_DIR` environment variable.
+
+
 Development
 -----------
 
