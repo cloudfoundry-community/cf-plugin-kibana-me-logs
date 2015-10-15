@@ -1,4 +1,4 @@
 package main
 
 // VERSION of plugin
-var VERSION = "0.4.2"
+var VERSION = "0.4.3"
