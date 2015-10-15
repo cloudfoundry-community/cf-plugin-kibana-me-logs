@@ -291,10 +291,24 @@ func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceNa
 		}
 	}
 
+	fi, err := os.Lstat(dir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Checking to see if %s is a symlink\n", dir)
+	if fi.Mode()&os.ModeSymlink != 0 {
+		fmt.Printf("Reading symlink target for %s\n", dir)
+		dir, err = os.Readlink(dir)
+		if err != nil {
+			return err
+		}
+	}
+
 	fmt.Printf("Using %s as kibana-me-logs source directory\n", dir)
 	fmt.Printf("Pushing kibana-me-logs as %s...\n", kibanaAppName)
 	cmd := exec.Command("cf", "push", kibanaAppName, "--no-start", "-p", dir)
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}
