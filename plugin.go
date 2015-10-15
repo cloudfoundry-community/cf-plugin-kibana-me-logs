@@ -322,7 +322,7 @@ func (c *KibanaMeAppPlugin) cloneAndDeployKibanaMeLogs(logstashServiceInstanceNa
 
 	if c.shouldAuth {
 		c.kibanaUser = kibanaAppName
-		c.kibanaPassword, err = gostrgen.RandGen(20, gostrgen.All, "", "")
+		c.kibanaPassword, err = gostrgen.RandGen(20, gostrgen.All, "", "@$#~")
 		if err != nil {
 			return err
 		}
