@@ -13,7 +13,7 @@ Installation
 From community plugin repo:
 
 ```
-$ cf add-plugin-repo community http://plugins.cfapps.io/
+$ cf add-plugin-repo community https://plugins.cfapps.io/
 $ cf install-plugin kibana-me-logs -r community
 ```
 
